@@ -1,0 +1,42 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from numpy.lib import scimath as SM
+
+n0 = 1.5145 # prism
+eps0 = np.power(n0, 2)
+# eps0 =  3.6168
+# n0 = np.sqrt(eps0)
+eps1 = -6.40 + 0.43056j # Ag metal 6510nm
+# eps2 = -5370.3 + 1261.3j # Cu metal 10.6um
+eps2 = 1.5 # dielectric
+# eps2 = -6.40 + 0.43056j
+eps3 = 1.0
+d1 = 50.0e-09
+d2 = 10.0e-09
+wavelength = 631e-09
+l_speed = 3.0e08
+omega = 2.0 * np.pi * l_speed / wavelength
+kx_0 = omega / l_speed * np.sqrt( eps1 * eps2 / (eps1+eps2))
+
+def kx(theta):
+    return omega / l_speed * n0 * np.sin(theta)
+
+def reflectivity(theta, eps1 = eps1):
+    k_z0 = SM.sqrt(eps0 * np.power((omega / l_speed),2) - np.power(kx(theta),2))
+    k_z1 = SM.sqrt(eps1 * np.power((omega / l_speed),2) - np.power(kx(theta),2))
+    k_z2 = SM.sqrt(eps2 * np.power((omega / l_speed),2) - np.power(kx(theta),2))
+    k_z3 = SM.sqrt(eps3 * np.power((omega / l_speed),2) - np.power(kx(theta),2))
+    # rik = (k_zi * epsk - k_zk * epsi) / (k_zi * epsk + k_zk * epsi)
+    r01 = (k_z0 * eps1 - k_z1 * eps0) / (k_z0 * eps1 + k_z1 * eps0)
+    r12 = (k_z1 * eps2 - k_z2 * eps1) / (k_z1 * eps2 + k_z2 * eps1)
+    r23 = (k_z2 * eps3 - k_z3 * eps2) / (k_z2 * eps3 + k_z3 * eps2)
+    R = np.power(np.abs((r01 + r12 * np.exp(2.0* 1.0j * k_z1 * d1) + r23 * np.exp(2.0 * 1.0j * (k_z1 * d1 + k_z2 * d2)) + r01 * r12 * r23 * np.exp(2.0* 1.0j * k_z2 * d2))/(1.0 + r01 * r12 * np.exp(2.0* 1.0j * k_z1 * d1) + r01 * r23 * np.exp(2.0 * 1.0j * (k_z1 * d1 + k_z2 * d2)) +  r12 * r23 * np.exp(2.0* 1.0j * k_z2 * d2))),2)
+    return  R
+
+theta_range = np.linspace(30.0, 50.0, 1000)
+R = [reflectivity(np.pi * theta /180.0) for theta in theta_range]
+
+plt.plot(theta_range, R)
+
+plt.ylim([0, 1])
+plt.show()
